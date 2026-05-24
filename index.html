@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SITTA - Universitas Terbuka</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Memuat Vue.js 3 Global Build secara Murni -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <!-- Root Vue Container -->
+  <div id="app" v-cloak>
+    
+    <!-- Header Utama (Branding & Navigasi) -->
+    <header>
+      <div class="logo-container">
+        <!-- Logo UT dengan CSS filter putih murni -->
+        <img src="assets/lambang-UT.png" alt="Logo UT" onerror="this.src='https://via.placeholder.com/50/002c59/ffffff?text=UT'">
+        <div class="logo-text">
+          <h1>SITTA</h1>
+        </div>
+      </div>
+      
+      <!-- Tombol Hamburger Menu Mobile -->
+      <button class="hamburger" @click="toggleMenu" aria-label="Toggle navigation">
+        &#9776;
+      </button>
+      
+      <!-- Navigasi Utama -->
+      <nav>
+        <ul class="nav-menu" :class="{ 'active': isMenuOpen }">
+          <li><a href="index.html" class="active">Dashboard</a></li>
+          <li><a href="stok.html">Stok Bahan Ajar</a></li>
+          <li><a href="tracking.html">Tracking DO</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Konten Utama Portal (Simpel & Menarik) -->
+    <main class="container" style="max-width: 800px; margin-top: 4rem;">
+      
+      <!-- Banner Sambutan Minimalis -->
+      <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; text-align: center; padding: 3rem 2rem;">
+        <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: 1px;">SITTA UT</h1>
+        <p style="font-size: 1.1rem; opacity: 0.9; font-weight: 500;">Sistem Informasi Tata Kelola Bahan Ajar - Universitas Terbuka</p>
+      </div>
+
+      <!-- Grid Navigasi 2 Halaman Saja (Sangat Bersih & Menarik) -->
+      <div class="action-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+        
+        <!-- Kartu 1: Stok Bahan Ajar -->
+        <a href="stok.html" class="action-card" style="padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 15px; border-top: 5px solid var(--secondary);">
+          <span style="font-size: 3rem;">📦</span>
+          <div>
+            <h3 style="margin-bottom: 8px; font-size: 1.3rem;">Stok Bahan Ajar</h3>
+            <p>Kelola data buku, penempatan rak, status safety stock daerah, dan filter pencarian kategoris secara terstruktur.</p>
+          </div>
+        </a>
+
+        <!-- Kartu 2: Tracking Delivery Order -->
+        <a href="tracking.html" class="action-card" style="padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 15px; border-top: 5px solid var(--accent);">
+          <span style="font-size: 3rem;">🚚</span>
+          <div>
+            <h3 style="margin-bottom: 8px; font-size: 1.3rem;">Tracking DO</h3>
+            <p>Daftarkan paket pengiriman baru untuk mahasiswa dan lacak logistik perjalanan kurir secara real-time.</p>
+          </div>
+        </a>
+
+      </div>
+
+    </main>
+
+    <!-- Footer Copyright Akademik -->
+    <footer>
+      <p>&copy; 2026 Universitas Terbuka. Sistem Informasi Akademik SITTA. Seluruh Hak Cipta Dilindungi.</p>
+    </footer>
+  </div>
+
+  <!-- Inisialisasi Script Vue Sederhana untuk Navigasi Header Mobile -->
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          isMenuOpen: false
+        };
+      },
+      methods: {
+        toggleMenu() {
+          this.isMenuOpen = !this.isMenuOpen;
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

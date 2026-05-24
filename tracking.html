@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracking Delivery Order - SITTA Universitas Terbuka</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Memuat Vue.js 3 Global Build secara Murni -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <!-- Root Vue Container -->
+  <div id="app" v-cloak>
+    
+    <!-- Header Utama (Branding & Navigasi) -->
+    <header>
+      <div class="logo-container">
+        <!-- Logo UT dengan CSS filter putih murni -->
+        <img src="assets/lambang-UT.png" alt="Logo UT" onerror="this.src='https://via.placeholder.com/50/002c59/ffffff?text=UT'">
+        <div class="logo-text">
+          <h1 v-text="'SITTA'"></h1> <!-- v-text Demo -->
+        </div>
+      </div>
+      
+      <!-- Tombol Hamburger Menu Mobile -->
+      <button class="hamburger" @click="toggleMenu" aria-label="Toggle navigation">
+        &#9776;
+      </button>
+      
+      <!-- Navigasi Utama -->
+      <nav>
+        <ul class="nav-menu" :class="{ 'active': isMenuOpen }">
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="stok.html">Stok Bahan Ajar</a></li>
+          <li><a href="tracking.html" class="active">Tracking DO</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Konten Utama Halaman -->
+    <main class="container">
+      
+      <!-- Floating Success Popup Alert Modal (Sangat Menarik & Tidak Terlewatkan) -->
+      <div v-if="successAlert.visible" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-window" style="max-width: 420px; text-align: center; padding: 2rem 1.5rem; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+          
+          <!-- Big Premium Success Animated Icon -->
+          <div style="width: 64px; height: 64px; border-radius: 50%; background-color: #ecfdf5; border: 2px solid var(--success); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 700; margin: 0 auto 1.25rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);">
+            ✓
+          </div>
+          
+          <!-- Pop Up Title -->
+          <h3 style="color: var(--primary); font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem;">
+            Registrasi Berhasil!
+          </h3>
+          
+          <!-- Pop Up Description -->
+          <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Delivery Order dengan Nomor Registrasi <strong style="color: var(--primary-light);">{{ successAlert.noDO }}</strong> telah berhasil didaftarkan ke sistem logistik Universitas Terbuka.
+          </p>
+          
+          <!-- Pop Up Close Button -->
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 44, 89, 0.2);" @click="successAlert.visible = false">
+            Selesai & Tutup
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Input Delivery Order Baru (Card-Based Layout) -->
+      <div class="filter-card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+        
+        <!-- Header Banner Kontras Form DO -->
+        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); padding: 1.25rem 1.5rem; text-align: center; border-bottom: 3px solid var(--secondary);">
+          <h2 style="margin: 0; border-left: none; padding-left: 0; color: var(--white); font-weight: 800; font-size: 1.35rem; letter-spacing: 0.5px;">
+            Registrasi Delivery Order (DO)
+          </h2>
+        </div>
+        
+        <!-- Inner Padded Form Block -->
+        <div style="padding: 2rem;">
+          <form @submit.prevent="createDO" class="form-grid">
+            
+            <!-- Nomor DO (Auto-generated via Computed Property & Read-only) -->
+            <div class="form-group">
+              <label for="do-number">Nomor DO (Otomatis)</label>
+              <input type="text" id="do-number" :value="autoDoNumber" readonly style="background: #f1f5f9; font-weight: bold; color: var(--primary-light); cursor: not-allowed;">
+            </div>
+            
+            <!-- Tanggal Kirim (Auto local time zona saat dirender) -->
+            <div class="form-group">
+              <label for="do-date">Tanggal Kirim</label>
+              <input type="date" id="do-date" v-model="newDO.tanggalKirim" required>
+            </div>
+            
+            <!-- Input NIM Mahasiswa (Dengan Formatting real-time & Warning via Watcher) -->
+            <div class="form-group">
+              <label for="do-nim">NIM Mahasiswa (9 Digit Angka) <span style="color: var(--danger);">*</span></label>
+              <input type="text" id="do-nim" v-model="newDO.nim" placeholder="Contoh: 041234567" maxlength="9">
+              <span class="error-text" v-if="errors.nim">{{ errors.nim }}</span>
+              <small v-else style="color: #64748b;">Hanya angka digit. Maksimal dibatasi 9 digit.</small>
+            </div>
+            
+            <!-- Input Nama Penerima -->
+            <div class="form-group">
+              <label for="do-nama">Nama Lengkap Penerima <span style="color: var(--danger);">*</span></label>
+              <input type="text" id="do-nama" v-model="newDO.nama" placeholder="Masukkan nama lengkap mahasiswa">
+              <span class="error-text" v-if="errors.nama">{{ errors.nama }}</span>
+            </div>
+            
+            <!-- Dropdown Pilihan Jasa Kurir Ekspedisi -->
+            <div class="form-group">
+              <label for="do-ekspedisi">Pilih Kurir Ekspedisi <span style="color: var(--danger);">*</span></label>
+              <select id="do-ekspedisi" v-model="newDO.ekspedisi">
+                <option value="">-- Pilih Ekspedisi --</option>
+                <option v-for="ex in pengirimanList" :key="ex.kode" :value="ex.kode">{{ ex.nama }}</option>
+              </select>
+              <span class="error-text" v-if="errors.ekspedisi">{{ errors.ekspedisi }}</span>
+            </div>
+            
+            <!-- Dropdown Pilihan Paket Bahan Ajar -->
+            <div class="form-group">
+              <label for="do-paket">Pilih Paket Bahan Ajar <span style="color: var(--danger);">*</span></label>
+              <select id="do-paket" v-model="newDO.paket">
+                <option value="">-- Pilih Paket --</option>
+                <option v-for="p in paketList" :key="p.kode" :value="p.kode">{{ p.nama }}</option>
+              </select>
+              <span class="error-text" v-if="errors.paket">{{ errors.paket }}</span>
+            </div>
+
+            <!-- Rincian Isi Paket Terpilih (Kondisional render lewat v-if murni) -->
+            <div v-if="selectedPackageDetails" class="card" style="grid-column: 1 / -1; background: #faf8f5; border: 1.5px dashed var(--secondary); padding: 1.5rem; margin-top: 1rem; border-radius: 12px;">
+              <h4 style="color: var(--primary); margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                📦 Rincian Paket Terpilih: <span style="color: var(--accent);">{{ selectedPackageDetails.nama }}</span>
+              </h4>
+              
+              <div style="background-color: var(--white); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem;">
+                <p style="font-weight: 600; margin-bottom: 8px; color: #475569;">Daftar Isi Buku Paket:</p>
+                <ul style="margin-left: 20px; color: var(--dark); line-height: 1.6;">
+                  <li v-for="bookCode in selectedPackageDetails.isi" :key="bookCode">
+                    Buku Modul Mata Kuliah: <strong>{{ bookCode }}</strong>
+                  </li>
+                </ul>
+              </div>
+              
+              <!-- Kalkulasi Total Harga (Harga Paket + Biaya Tambahan Kurir Terkomputasi) -->
+              <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <span>Total Biaya Pengiriman:</span>
+                <span style="color: var(--accent); font-size: 1.4rem;">Rp {{ formatPrice(calculatedTotal) }}</span>
+              </div>
+              <small v-if="newDO.ekspedisi === 'EXP'" style="color: var(--success); font-weight: 600; display: block; text-align: right; margin-top: 4px;">
+                * Termasuk biaya tambahan pengiriman Ekspres Rp 25.000
+              </small>
+            </div>
+
+            <!-- Tombol Daftarkan DO -->
+            <div style="grid-column: 1 / -1; text-align: right; margin-top: 1.5rem;">
+              <button type="submit" class="btn btn-primary" style="width: auto; padding: 12px 28px; font-size: 1rem;">
+                Konfirmasi & Daftarkan DO
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tabel Daftar DO Terdaftar (Card Box Layout) -->
+      <div class="filter-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.2rem; color: var(--primary); font-weight: 700; border-left: 4px solid var(--accent); padding-left: 10px;">
+          Daftar Pengiriman Delivery Order (DO)
+        </h3>
+        
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>No. DO</th>
+                <th>Tanggal Kirim</th>
+                <th>NIM & Penerima</th>
+                <th>Paket Bahan Ajar</th>
+                <th>Total Tagihan</th>
+                <th>Status Paket</th>
+                <th>Aksi Pelacakan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="doItem in trackingData" :key="doItem.noDO">
+                <td><strong>{{ doItem.noDO }}</strong></td>
+                <td>{{ doItem.tanggalKirim }}</td>
+                <td>
+                  <small style="color: #64748b; font-weight: 600;">{{ doItem.nim }}</small><br>
+                  <strong>{{ doItem.nama }}</strong>
+                </td>
+                <td>{{ getPackageName(doItem.paket) }}</td>
+                <td style="font-weight: 700; color: var(--primary);">Rp {{ formatPrice(doItem.total) }}</td>
+                <td>
+                  <span class="status-dot dot-warning" style="display: inline-block; margin-right: 6px;"></span>
+                  <span style="font-weight: 600; color: #b45309;">{{ doItem.status || 'Diproses' }}</span>
+                </td>
+                <td>
+                  <button @click="viewDO(doItem)" class="btn btn-secondary btn-sm" style="width: auto;">
+                    Lacak Perjalanan
+                  </button>
+                </td>
+              </tr>
+              <!-- Tampilan jika tidak ada data DO -->
+              <tr v-if="trackingData.length === 0">
+                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 3rem;">
+                  Belum ada transaksi pengiriman DO yang terdaftar.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAMPILAN TIMELINE DIALOG (Lacak Pengiriman Realtime berdasarkan Status DO) -->
+      <div id="timeline-section" v-if="selectedDO" class="filter-card" style="padding: 1.5rem; border-top: 5px solid var(--accent); animation: fadeIn 0.4s ease-out; margin-bottom: 2rem;">
+        
+        <!-- Header Timeline Section -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+          <h3 style="color: var(--primary); font-weight: 800; margin: 0;">
+            Detail Lacak Status Paket: <span style="color: var(--accent);">{{ selectedDO.noDO }}</span>
+          </h3>
+          <button @click="selectedDO = null" class="btn btn-sm btn-danger" style="width: auto; padding: 6px 14px;">
+            Tutup Pelacakan
+          </button>
+        </div>
+        
+        <!-- Rincian Identitas DO -->
+        <div style="background: var(--light); padding: 1.25rem; border-radius: 10px; margin-bottom: 2rem; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+          <div>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Nama Penerima (NIM):</p>
+            <p style="margin: 3px 0 0 0; font-weight: 700; color: var(--primary);">{{ selectedDO.nama }} ({{ selectedDO.nim }})</p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Paket Bahan Ajar:</p>
+            <p style="margin: 3px 0 0 0; font-weight: 700; color: var(--primary);">{{ getPackageName(selectedDO.paket) }}</p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Metode Kurir:</p>
+            <p style="margin: 3px 0 0 0; font-weight: 700; color: var(--primary);">{{ selectedDO.ekspedisi }}</p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Status Logistik:</p>
+            <p style="margin: 3px 0 0 0; font-weight: 700; color: #b45309;">⚠️ {{ selectedDO.status || 'Diproses' }}</p>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 700;">Garis Waktu Perjalanan (Vertical Timeline)</h4>
+        
+        <!-- Timeline Stepper Vertikal -->
+        <div class="timeline">
+          
+          <!-- Step 1: Pemrosesan Gudang -->
+          <div class="timeline-item">
+            <div class="timeline-content" :style="getTimelineStyle(selectedDO.status, 1)">
+              <div class="timeline-time">Tahap 1 - Administrasi & Karantina</div>
+              <p style="margin: 0 0 4px 0; font-weight: 700; color: var(--primary); font-size: 1.05rem;">Bahan Ajar Diproses di Gudang UT Pusat</p>
+              <small style="color: #64748b; line-height: 1.4;">Dokumen berkas DO dicetak, inventaris dirapikan dari rak penyusunan, dan modul dibungkus plastik pelindung air.</small>
+            </div>
+          </div>
+          
+          <!-- Step 2: Pengiriman Ekspedisi -->
+          <div class="timeline-item">
+            <div class="timeline-content" :style="getTimelineStyle(selectedDO.status, 2)">
+              <div class="timeline-time">Tahap 2 - Distribusi Logistik</div>
+              <p style="margin: 0 0 4px 0; font-weight: 700; color: var(--primary); font-size: 1.05rem;">Paket Diserahkan ke Jasa Kurir Ekspedisi</p>
+              <small style="color: #64748b; line-height: 1.4;">Paket dalam perjalanan logistik antar kota menuju gudang transit daerah UPBJJ penerima.</small>
+            </div>
+          </div>
+          
+          <!-- Step 3: Penerimaan -->
+          <div class="timeline-item">
+            <div class="timeline-content" :style="getTimelineStyle(selectedDO.status, 3)">
+              <div class="timeline-time">Tahap 3 - Penyelesaian</div>
+              <p style="margin: 0 0 4px 0; font-weight: 700; color: var(--primary); font-size: 1.05rem;">Paket Tiba & Diterima Mahasiswa</p>
+              <small style="color: #64748b; line-height: 1.4;">Paket telah berhasil diserahkan ke alamat tujuan dan ditandatangani oleh penerima yang bersangkutan.</small>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer Copyright Akademik -->
+    <footer>
+      <p>&copy; 2026 Universitas Terbuka. Sistem Informasi Akademik SITTA. Seluruh Hak Cipta Dilindungi.</p>
+    </footer>
+  </div>
+
+  <!-- Integrasi Data Dummy & Aplikasi Vue -->
+  <script src="js/dataBahanAjar.js"></script>
+  <script src="js/tracking-app.js"></script>
+</body>
+</html>
